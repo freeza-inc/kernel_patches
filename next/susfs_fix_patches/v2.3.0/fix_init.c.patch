@@ -83,14 +83,14 @@ index cd398036..17126eb2 100644
 @@ -138,75 +107,41 @@
  	}
  
- 	ksu_init_symbol_resolver();
+-	ksu_init_symbol_resolver();
 -	ksu_syscall_hook_init();
 +
 +#ifdef CONFIG_KSU_SUSFS
 +    susfs_init();
 +#endif // #ifdef KSU_SUSFS
  
- 	ksu_feature_init();
+-	ksu_feature_init();
 -	ksu_sulog_init();
 -	ksu_adb_root_init();
 -	ksu_lsm_hook_init();
