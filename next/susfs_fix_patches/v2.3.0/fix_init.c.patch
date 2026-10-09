@@ -1,5 +1,5 @@
---- a/kernel/core/init.c	2026-10-08 19:47:37.171342400 -0700
-+++ b/kernel/core/init.c	2026-10-08 21:01:16.558141472 -0700
+--- a/kernel/core/init.c	2026-10-08 21:52:29.758709500 -0700
++++ b/kernel/core/init.c	2026-10-08 21:59:19.003612300 -0700
 @@ -5,6 +5,7 @@
  #include <linux/rcupdate.h>
  #include <linux/sched.h>
