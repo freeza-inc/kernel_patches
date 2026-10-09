@@ -1,7 +1,5 @@
-diff --git a/kernel/core/init.c b/kernel/core/init.c
-index cd398036..17126eb2 100644
---- a/kernel/core/init.c
-+++ b/kernel/core/init.c
+--- a/kernel/core/init.c	2026-10-08 19:47:37.171342400 -0700
++++ b/kernel/core/init.c	2026-10-08 21:01:16.558141472 -0700
 @@ -5,6 +5,7 @@
  #include <linux/rcupdate.h>
  #include <linux/sched.h>
@@ -32,7 +30,7 @@ index cd398036..17126eb2 100644
  
  // workaround for A12-5.10 kernel
  // Some third-party kernel (e.g. linegaeOS) uses wrong toolchain, which supports
-@@ -84,35 +79,8 @@
+@@ -84,35 +79,13 @@
  bool ksu_no_custom_rc = false;
  module_param_named(norc, ksu_no_custom_rc, bool, 0);
  
@@ -61,14 +59,17 @@ index cd398036..17126eb2 100644
 -
 -#ifdef MODULE
 -	ksu_late_loaded = (current->pid != 1);
--#else
++#ifdef KSU_MANAGER_PACKAGE
++	pr_info("welcome to KernelSU version " __stringify(KERNEL_SU_VERSION) ", package name " KSU_MANAGER_PACKAGE "\n");
+ #else
 -	ksu_late_loaded = false;
--#endif
++	pr_info("welcome to KernelSU version " __stringify(KERNEL_SU_VERSION) "\n");
+ #endif
 -
  #ifdef CONFIG_KSU_DEBUG
  	pr_alert("*************************************************************");
  	pr_alert("**     NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE    **");
-@@ -122,6 +90,7 @@
+@@ -122,6 +95,7 @@
  	pr_alert("**     NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE    **");
  	pr_alert("*************************************************************");
  #endif
@@ -76,7 +77,7 @@ index cd398036..17126eb2 100644
  	if (allow_shell) {
  		pr_alert("shell is allowed at init!");
  	}
-@@ -133,75 +102,41 @@
+@@ -133,75 +107,41 @@
  	}
  
  	ksu_init_symbol_resolver();
@@ -94,57 +95,57 @@ index cd398036..17126eb2 100644
  
  	ksu_supercalls_init();
 -	ksu_app_profile_init();
--
+ 
 -	if (ksu_late_loaded) {
 -		pr_info("late load mode, skipping kprobe hooks\n");
--
++    ksu_sucompat_init();
+ 
 -		apply_kernelsu_rules();
 -		cache_sid();
 -		setup_ksu_cred();
--
++    ksu_setuid_hook_init();
+ 
 -		// Grant current process (ksud late-load) root
 -		// with KSU SELinux domain before enforcing SELinux, so it
 -		// can continue to access /data/app etc. after enforcement.
 -		escape_to_root_for_init();
--
++    ksu_sulog_init();
+ 
 -		ksu_allowlist_init();
 -		ksu_load_allow_list();
++    ksu_adb_root_init();
  
 -		ksu_syscall_hook_manager_init();
-+    ksu_sucompat_init();
++    ksu_selinux_hide_init();
  
 -		ksu_throne_tracker_init();
 -		ksu_observer_init();
 -		ksu_file_wrapper_init();
-+    ksu_setuid_hook_init();
++    ksu_allowlist_init();
  
 -		ksu_boot_completed = true;
 -		track_throne(false);
-+    ksu_sulog_init();
++    ksu_throne_tracker_init();
  
 -		if (!getenforce()) {
 -			pr_info("Permissive SELinux, enforcing\n");
 -			setenforce(true);
 -		}
-+    ksu_adb_root_init();
++    ksu_ksud_init();
  
 -	} else {
 -		ksu_syscall_hook_manager_init();
-+    ksu_selinux_hide_init();
- 
--		ksu_allowlist_init();
-+    ksu_allowlist_init();
- 
--		ksu_throne_tracker_init();
-+    ksu_throne_tracker_init();
- 
--		ksu_ksud_init();
-+    ksu_ksud_init();
- 
--		ksu_file_wrapper_init();
--	}
 +    ksu_file_wrapper_init();
  
+-		ksu_allowlist_init();
+-
+-		ksu_throne_tracker_init();
+-
+-		ksu_ksud_init();
+-
+-		ksu_file_wrapper_init();
+-	}
+-
 -#ifdef MODULE
 -#ifndef CONFIG_KSU_DEBUG
 -	kobject_del(&THIS_MODULE->mkobj.kobj);
@@ -166,7 +167,7 @@ index cd398036..17126eb2 100644
  
  	// Wait for any in-flight RCU readers (e.g. handler traversing allow_list)
  	synchronize_rcu();
-@@ -215,8 +150,6 @@
+@@ -215,8 +155,6 @@
  
  	ksu_selinux_hide_exit();
  
