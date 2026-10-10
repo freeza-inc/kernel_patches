@@ -71,7 +71,7 @@
 +				      struct context *tcontext,
 +				      u16 tclass,
 +				      struct av_decision *avd,
-+				      struct extended_perms *xperms);#else
++				      struct extended_perms *xperms);
  #else
 -static struct selinux_state fake_state;
 +struct selinux_state fake_state;
