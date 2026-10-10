@@ -1,8 +1,16 @@
-diff --git a/kernel/supercall/dispatch.c b/kernel/supercall/dispatch.c
-index 9bb82370..be9101ff 100644
---- a/kernel/supercall/dispatch.c
-+++ b/kernel/supercall/dispatch.c
-@@ -46,9 +46,6 @@ static int do_get_info(void __user *arg)
+--- a/kernel/supercall/dispatch.c	2026-10-09 20:37:17.516147946 -0700
++++ b/kernel/supercall/dispatch.c	2026-10-09 20:36:32.484159590 -0700
+@@ -54,9 +54,6 @@
+     if (is_manager()) {
+         cmd.flags |= KSU_GET_INFO_FLAG_MANAGER;
+     }
+-    if (ksu_late_loaded) {
+-        cmd.flags |= KSU_GET_INFO_FLAG_LATE_LOAD;
+-    }
+     cmd.features = KSU_FEATURE_MAX;
+     cmd.uapi_version = KERNEL_SU_UAPI_VERSION;
+ 
+@@ -74,17 +71,11 @@
  
  #ifdef MODULE
      cmd.flags |= KSU_GET_INFO_FLAG_LKM;
@@ -11,14 +19,12 @@ index 9bb82370..be9101ff 100644
 -    }
  #endif
  
-     if (ksuver_override)
-@@ -57,9 +54,6 @@ static int do_get_info(void __user *arg)
      if (is_manager()) {
          cmd.flags |= KSU_GET_INFO_FLAG_MANAGER;
      }
 -    if (ksu_late_loaded) {
 -        cmd.flags |= KSU_GET_INFO_FLAG_LATE_LOAD;
 -    }
- #ifdef EXPECTED_SIZE2
-     cmd.flags |= KSU_GET_INFO_FLAG_PR_BUILD;
- #endif
+     cmd.features = KSU_FEATURE_MAX;
+ 
+     if (copy_to_user(arg, &cmd, sizeof(cmd))) {
