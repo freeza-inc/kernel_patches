@@ -1,15 +1,14 @@
---- a/kernel/core/init.c	2026-10-12 13:28:32.694895551 -0700
-+++ b/kernel/core/init.c	2026-10-12 13:24:04.322916330 -0700
-@@ -5,7 +5,7 @@
+--- a/kernel/core/init.c	2026-10-19 09:05:02.836429815 -0700
++++ b/kernel/core/init.c	2026-10-19 09:21:10.664249892 -0700
+@@ -5,6 +5,7 @@
  #include <linux/rcupdate.h>
  #include <linux/sched.h>
  #include <linux/workqueue.h>
--
 +#include <linux/susfs.h>
+ 
  #include "policy/allowlist.h"
  #include "policy/app_profile.h"
- #include "policy/feature.h"
-@@ -18,21 +18,13 @@
+@@ -18,22 +19,14 @@
  #include "ksu.h"
  #include "infra/file_wrapper.h"
  #include "selinux/selinux.h"
@@ -20,6 +19,7 @@
  #include "feature/shell_su_adb_only.h"
  #include "feature/sulog.h"
 -#include "infra/symbol_resolver.h"
+ #include "preinit/preinit.h"
 -
 -#if defined(__x86_64__) && !defined(CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER)
 -#include <asm/cpufeature.h>
@@ -33,7 +33,7 @@
  
  // workaround for A12-5.10 kernel
  // Some third-party kernel (e.g. linegaeOS) uses wrong toolchain, which supports
-@@ -83,11 +75,6 @@
+@@ -84,11 +77,6 @@
  bool ksu_no_custom_rc = false;
  module_param_named(norc, ksu_no_custom_rc, bool, 0);
  
@@ -45,7 +45,7 @@
  int __init kernelsu_init(void)
  {
  #ifdef KSU_MANAGER_PACKAGE
-@@ -95,27 +82,6 @@
+@@ -96,27 +84,6 @@
  #else
  	pr_info("welcome to KernelSU version " __stringify(KERNEL_SU_VERSION) "\n");
  #endif
@@ -73,7 +73,7 @@
  
  #ifdef CONFIG_KSU_DEBUG
  	pr_alert("*************************************************************");
-@@ -126,6 +92,7 @@
+@@ -127,6 +94,7 @@
  	pr_alert("**     NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE    **");
  	pr_alert("*************************************************************");
  #endif
@@ -81,13 +81,13 @@
  	if (allow_shell) {
  		pr_alert("shell is allowed at init!");
  	}
-@@ -136,82 +103,43 @@
+@@ -137,86 +105,48 @@
  		return -ENOSYS;
  	}
  
 -	ksu_init_symbol_resolver();
 -	ksu_syscall_hook_init();
-+#ifdef CONFIG_KSU_SUSFS
++#ifdef CONFIG_KSU_SUSFS
 +    susfs_init();
 +#endif // #ifdef KSU_SUSFS
  
@@ -110,50 +110,53 @@
 -		apply_kernelsu_rules();
 -		cache_sid();
 -		setup_ksu_cred();
-+    ksu_sucompat_init();
- 
+-
 -		// Grant current process (ksud late-load) root
 -		// with KSU SELinux domain before enforcing SELinux, so it
 -		// can continue to access /data/app etc. after enforcement.
 -		escape_to_root_for_init();
-+    ksu_setuid_hook_init();
  
 -		ksu_allowlist_init();
 -		ksu_load_allow_list();
-+    ksu_sulog_init();
++    ksu_sucompat_init();
  
 -		ksu_syscall_hook_manager_init();
-+    ksu_adb_root_init();
++    ksu_setuid_hook_init();
  
 -		ksu_throne_tracker_init();
 -		ksu_observer_init();
 -		ksu_file_wrapper_init();
-+    ksu_selinux_hide_init();
++    ksu_sulog_init();
  
 -		ksu_boot_completed = true;
 -		track_throne(false);
-+    ksu_shell_su_adb_only_init();
++    ksu_adb_root_init();
  
 -		ksu_feature_apply_forced();
-+    ksu_allowlist_init();
++    ksu_selinux_hide_init();
  
 -		if (!getenforce()) {
 -			pr_info("Permissive SELinux, enforcing\n");
 -			setenforce(true);
 -		}
-+    ksu_throne_tracker_init();
++    ksu_shell_su_adb_only_init();
  
 -	} else {
 -		ksu_syscall_hook_manager_init();
-+    ksu_ksud_init();
++	ksu_allowlist_init();
  
 -		ksu_allowlist_init();
-+    ksu_file_wrapper_init();
++	ksu_throne_tracker_init();
  
 -		ksu_throne_tracker_init();
--
++	ksu_ksud_init();
+ 
 -		ksu_ksud_init();
--
++	ksu_preinit_init();
+ 
+-		ksu_preinit_init();
++	ksu_file_wrapper_init();
+ 
 -		ksu_file_wrapper_init();
 -	}
 -
@@ -172,13 +175,17 @@
 -
  	ksu_supercalls_exit();
  
--	if (!ksu_late_loaded)
+-	if (!ksu_late_loaded) {
 -		ksu_ksud_exit();
+-		ksu_preinit_exit();
+-	}
 +    ksu_ksud_exit();
++
++    ksu_preinit_exit();
  
  	// Wait for any in-flight RCU readers (e.g. handler traversing allow_list)
  	synchronize_rcu();
-@@ -224,11 +152,15 @@
+@@ -229,11 +159,15 @@
  	ksu_allowlist_exit();
  
  	ksu_shell_su_adb_only_exit();
