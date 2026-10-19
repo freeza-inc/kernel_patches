@@ -1,0 +1,12 @@
+--- a/fs/exec.c	2026-10-19 11:45:45.614619753 -0700
++++ b/fs/exec.c	2026-10-19 11:49:46.798574754 -0700
+@@ -69,6 +69,9 @@
+ #include <linux/user_events.h>
+ #include <linux/rseq.h>
+ #include <linux/ksm.h>
++#ifdef CONFIG_KSU_SUSFS
++#include <linux/susfs_def.h>
++#endif
+ 
+ #include <linux/uaccess.h>
+ #include <asm/mmu_context.h>

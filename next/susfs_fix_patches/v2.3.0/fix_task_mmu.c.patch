@@ -1,0 +1,32 @@
+--- a/fs/proc/task_mmu.c	2026-10-19 11:53:52.966530662 -0700
++++ b/fs/proc/task_mmu.c	2026-10-19 12:03:15.826423966 -0700
+@@ -1346,6 +1346,14 @@
+ 	struct vm_area_struct *vma = v;
+ 	struct mem_size_stats mss = {};
+ 
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++	if (vma->vm_file) {
++		if (SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
++			return 0;
++	}
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
++
++
+ 	if (!vma_pages(vma))
+ 		goto show_pad;
+ 
+@@ -1405,7 +1413,14 @@
+ 
+ 	vma_start = vma->vm_start;
+ 	do {
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++		if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
++			goto bypass_orig_flow;
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+ 		smap_gather_stats(vma, &mss, 0);
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++bypass_orig_flow:
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+ 		last_vma_end = vma->vm_end;
+ 
+ 		/*
