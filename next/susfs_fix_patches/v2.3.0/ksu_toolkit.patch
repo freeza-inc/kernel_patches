@@ -1,16 +1,8 @@
 diff --git a/kernel/feature/sucompat.c b/kernel/feature/sucompat.c
-index e784aba5..f770abdb 100644
+index 67d46fe3..32a5e754 100644
 --- a/kernel/feature/sucompat.c
 +++ b/kernel/feature/sucompat.c
-@@ -202,6 +202,7 @@ int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
-     pr_info("ksu_handle_execveat_sucompat: su->ksud!\n");
-     memcpy((void *)filename->name, ksud_path, sizeof(ksud_path));
- 
-+    ksu_compat_sulog('x');
-     pending_sucompat = ksu_sulog_capture_sucompat(filename->name, (struct user_arg_ptr*)argv_user, GFP_KERNEL);
- 
-     const char __user *argv_user_ptr = get_user_arg_ptr(*((struct user_arg_ptr*)argv_user), 0);
-@@ -256,6 +257,7 @@ int ksu_handle_faccessat(int *dfd, struct filename **filename, int *mode,
+@@ -258,6 +258,7 @@ int ksu_handle_faccessat(int *dfd, struct filename **filename, int *mode,
          return 0;
      }
  
@@ -18,7 +10,7 @@ index e784aba5..f770abdb 100644
      pr_info("ksu_handle_faccessat: su->sh!\n");
      memcpy((void *)((*filename)->name), sh_path, sizeof(sh_path));
      return 0;
-@@ -274,6 +276,7 @@ int ksu_handle_stat(int *dfd, struct filename **filename, int *flags) {
+@@ -276,6 +277,7 @@ int ksu_handle_stat(int *dfd, struct filename **filename, int *flags) {
          return 0;
      }
  
@@ -27,10 +19,10 @@ index e784aba5..f770abdb 100644
      memcpy((void *)((*filename)->name), sh_path, sizeof(sh_path));
      return 0;
 diff --git a/kernel/supercall/dispatch.c b/kernel/supercall/dispatch.c
-index 90a3c49a..8550cf87 100644
+index fbf5410d..40357c5a 100644
 --- a/kernel/supercall/dispatch.c
 +++ b/kernel/supercall/dispatch.c
-@@ -472,6 +472,67 @@ static int do_manage_mark(void __user *arg)
+@@ -477,6 +477,67 @@ static int do_manage_mark(void __user *arg)
      return 0;
  }
  
@@ -98,7 +90,7 @@ index 90a3c49a..8550cf87 100644
  int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg)
  {
      if (magic1 != KSU_INSTALL_MAGIC1) {
-@@ -550,7 +611,7 @@ int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user
+@@ -555,7 +616,7 @@ int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user
      if (magic2 == KSU_INSTALL_MAGIC2)
          return ksu_supercall_reboot_handler(arg);
  
